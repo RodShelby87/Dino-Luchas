@@ -164,9 +164,7 @@
     </div>
 
     <script>
-        // REPLACE THIS WITH YOUR RENDER BACKEND URL
-        const SERVER_URL = "http://localhost:3000"; 
-        const socket = io(SERVER_URL);
+        const socket = io(); // No URL needed! It automatically connects to itself.
 
         let myColor = '';
         let currentRoom = '';

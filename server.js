@@ -5,14 +5,17 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-
-// Esta línea mágica conecta tu carpeta public/ con el servidor
 app.use(express.static('public'));
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
-// Base de datos en memoria para las salas
+// CONFIGURACIÓN ANTI-DESCONEXIÓN: Latidos cada 15 segundos para mantener vivo a Render
+const io = new Server(server, { 
+    cors: { origin: "*" },
+    pingInterval: 15000,
+    pingTimeout: 30000 
+});
+
 const rooms = {}; 
 
 function checkWinner(move1, move2) {
@@ -56,17 +59,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('play_card', ({ roomId, card }) => {
+    // AHORA RECIBIMOS EL COLOR PARA EVITAR BUGS DE DESCONEXIÓN
+    socket.on('play_card', ({ roomId, color, card }) => {
         const room = rooms[roomId];
         if (!room) return;
         
-        room.moves[socket.id] = card;
+        room.moves[color] = card;
 
         if (Object.keys(room.moves).length === 2) {
-            const p1 = room.players[0];
-            const p2 = room.players[1];
-            const move1 = room.moves[p1.id];
-            const move2 = room.moves[p2.id];
+            const p1 = room.players[0]; // Rojo
+            const p2 = room.players[1]; // Azul
+            const move1 = room.moves['Rojo'];
+            const move2 = room.moves['Azul'];
 
             const result = checkWinner(move1, move2);
             let roundWinner = result;
@@ -108,17 +112,6 @@ io.on('connection', (socket) => {
             socket.to(roomId).emit('opponent_surrendered');
             delete rooms[roomId];
             io.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
-        }
-    });
-
-    socket.on('disconnect', () => {
-        for (const roomId in rooms) {
-            const room = rooms[roomId];
-            if (room.players.some(p => p.id === socket.id)) {
-                socket.to(roomId).emit('opponent_surrendered');
-                delete rooms[roomId];
-                io.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
-            }
         }
     });
 });

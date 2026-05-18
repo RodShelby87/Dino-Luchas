@@ -5,10 +5,14 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+
+// Esta línea mágica conecta tu carpeta public/ con el servidor
+app.use(express.static('public'));
+
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-// In-memory database for open rooms
+// Base de datos en memoria para las salas
 const rooms = {}; 
 
 function checkWinner(move1, move2) {
@@ -70,7 +74,6 @@ io.on('connection', (socket) => {
             if (result === 'P1' || result === 'BOTH') p1.tracks[move1]++;
             if (result === 'P2' || result === 'BOTH') p2.tracks[move2]++;
 
-            // Check Game Win condition (Any track reaches 3)
             const p1Wins = Object.values(p1.tracks).some(t => t >= 3);
             const p2Wins = Object.values(p2.tracks).some(t => t >= 3);
             
@@ -79,7 +82,6 @@ io.on('connection', (socket) => {
             else if (p1Wins) gameWinner = 'P1_WINS';
             else if (p2Wins) gameWinner = 'P2_WINS';
 
-            // Tie logic (Gridlock)
             if (result === 'NONE') {
                 p1.available = p1.available.filter(c => c !== move1);
                 p2.available = p2.available.filter(c => c !== move2);

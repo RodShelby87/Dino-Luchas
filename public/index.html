@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Luchas - Web</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root {
+            --red: #e74c3c;
+            --blue: #3498db;
+            --bg: #f4f4f9;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .golden-nav {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            font-weight: bold;
+        }
+        button:hover { background-color: #555; }
+        .surrender-btn { background-color: var(--red); }
+        .surrender-btn:hover { background-color: #c0392b; }
+        
+        #lobby, #game-board {
+            margin-top: 80px;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        #game-board { display: none; }
+        
+        .room-list {
+            list-style: none;
+            padding: 0;
+        }
+        .room-item {
+            background: white;
+            margin: 5px auto;
+            padding: 10px;
+            width: 200px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .tracks-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .player-track-board {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 45%;
+        }
+        .track-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .track-label { width: 40px; font-weight: bold; font-size: 12px; }
+        .spaces { display: flex; gap: 5px; }
+        .space {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .space.corona { border-color: gold; }
+        .token {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        .token.red { background-color: var(--red); }
+        .token.blue { background-color: var(--blue); }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .card {
+            width: 100px;
+            height: 140px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        .card:hover:not(.disabled) { transform: translateY(-10px); }
+        .card.disabled { opacity: 0.5; cursor: not-allowed; }
+        .card-title { font-size: 12px; font-weight: bold; margin-bottom: 5px; text-align: center; }
+        
+        #round-status { font-size: 18px; font-weight: bold; color: #555; height: 30px; margin: 15px 0;}
+    </style>
+</head>
+<body>
+
+    <nav class="golden-nav">
+        <button id="btn-lobby" onclick="goToLobby()">Lobby</button>
+        <button id="btn-volver" onclick="goToLobby()">Volver</button>
+    </nav>
+
+    <div id="lobby">
+        <h1>Dino Luchas</h1>
+        <button onclick="createRoom()" style="font-size: 18px; padding: 10px 20px;">Crear Nueva Sala</button>
+        
+        <h2>Salas Abiertas</h2>
+        <ul id="room-list" class="room-list"></ul>
+    </div>
+
+    <div id="game-board">
+        <h2 id="room-display">Sala: ----</h2>
+        <button class="surrender-btn" onclick="surrender()">Abandonar Sala</button>
+        <div id="round-status">¡A LUCHAR! Elige una carta.</div>
+
+        <div class="tracks-container">
+            <div class="player-track-board" id="board-Rojo">
+                <h3>Jugador Rojo</h3>
+                <div id="tracks-Rojo"></div>
+            </div>
+            <div class="player-track-board" id="board-Azul">
+                <h3>Jugador Azul</h3>
+                <div id="tracks-Azul"></div>
+            </div>
+        </div>
+
+        <h3>Tu Mano</h3>
+        <div class="hand" id="player-hand">
+            </div>
+    </div>
+
+    <script>
+        // REPLACE THIS WITH YOUR RENDER BACKEND URL
+        const SERVER_URL = "http://localhost:3000"; 
+        const socket = io(SERVER_URL);
+
+        let myColor = '';
+        let currentRoom = '';
+
+        const cardData = {
+            'AA': { name: 'Ataque Alto', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="80" y2="20" stroke="currentColor" stroke-width="6"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
+            'AB': { name: 'Ataque Bajo', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="90" y2="70" stroke="currentColor" stroke-width="6"/></svg>' },
+            'DA': { name: 'Defensa Alta', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="30" stroke="currentColor" stroke-width="6"/><line x1="70" y1="30" x2="50" y2="10" stroke="currentColor" stroke-width="6"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
+            'DB': { name: 'Defensa Baja', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="50" r="12" fill="currentColor"/><line x1="50" y1="62" x2="50" y2="80" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="70" y2="90" stroke="currentColor" stroke-width="6"/><line x1="50" y1="80" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="80" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' }
+        };
+
+        // UI Routing
+        function goToLobby() {
+            if (currentRoom) socket.emit('surrender', currentRoom);
+            document.getElementById('lobby').style.display = 'block';
+            document.getElementById('game-board').style.display = 'none';
+            currentRoom = '';
+        }
+
+        // Socket Events
+        socket.on('update_lobby', (openRooms) => {
+            const list = document.getElementById('room-list');
+            list.innerHTML = '';
+            openRooms.forEach(roomId => {
+                const li = document.createElement('li');
+                li.className = 'room-item';
+                li.innerHTML = `<span>Sala ${roomId}</span> <button onclick="joinRoom('${roomId}')">Unirse</button>`;
+                list.appendChild(li);
+            });
+        });
+
+        function createRoom() { socket.emit('create_room'); }
+        function joinRoom(roomId) { socket.emit('join_room', roomId); }
+
+        socket.on('room_created', (roomId) => {
+            currentRoom = roomId;
+            myColor = 'Rojo';
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-board').style.display = 'block';
+            document.getElementById('room-display').innerText = `Sala: ${roomId} (Esperando oponente...)`;
+            renderTracks();
+        });
+
+        socket.on('game_start', (roomState) => {
+            currentRoom = roomState.id;
+            if(!myColor) myColor = 'Azul';
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-board').style.display = 'block';
+            document.getElementById('room-display').innerText = `Sala: ${currentRoom} - ¡Comienza la partida!`;
+            updateBoard(roomState);
+            renderHand(['AA', 'AB', 'DA', 'DB']);
+        });
+
+        function renderTracks() {
+            ['Rojo', 'Azul'].forEach(color => {
+                const container = document.getElementById(`tracks-${color}`);
+                container.innerHTML = '';
+                ['AA', 'AB', 'DA', 'DB'].forEach(trackId => {
+                    const row = document.createElement('div');
+                    row.className = 'track-row';
+                    let spacesHTML = '';
+                    for(let i=0; i<4; i++) {
+                        spacesHTML += `<div class="space ${i===3 ? 'corona' : ''}" id="space-${color}-${trackId}-${i}">
+                                        ${i===3 ? '👑' : ''}</div>`;
+                    }
+                    row.innerHTML = `<div class="track-label">${trackId}</div><div class="spaces">${spacesHTML}</div>`;
+                    container.appendChild(row);
+                });
+            });
+        }
+
+        function updateBoard(roomState) {
+            renderTracks(); // Reset graphics
+            roomState.players.forEach(p => {
+                const color = p.color;
+                const tokenClass = color === 'Rojo' ? 'token red' : 'token blue';
+                ['AA', 'AB', 'DA', 'DB'].forEach(trackId => {
+                    const pos = p.tracks[trackId];
+                    const targetSpace = document.getElementById(`space-${color}-${trackId}-${pos}`);
+                    if(targetSpace) targetSpace.innerHTML = `<div class="${tokenClass}"></div>`;
+                });
+            });
+        }
+
+        function renderHand(availableCards) {
+            const handDiv = document.getElementById('player-hand');
+            handDiv.innerHTML = '';
+            const hexColor = myColor === 'Rojo' ? '#e74c3c' : '#3498db';
+
+            ['AA', 'AB', 'DA', 'DB'].forEach(cardId => {
+                const isDisabled = !availableCards.includes(cardId);
+                const btn = document.createElement('div');
+                btn.className = `card ${isDisabled ? 'disabled' : ''}`;
+                btn.style.color = hexColor;
+                btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> ${cardData[cardId].svg}`;
+                if(!isDisabled) {
+                    btn.onclick = () => playCard(cardId);
+                }
+                handDiv.appendChild(btn);
+            });
+        }
+
+        function playCard(cardId) {
+            document.getElementById('round-status').innerText = 'Esperando al oponente...';
+            document.getElementById('player-hand').innerHTML = ''; // Hide hand until resolution
+            socket.emit('play_card', { roomId: currentRoom, card: cardId });
+        }
+
+        socket.on('round_result', ({ p1Move, p2Move, roundWinner, gameWinner, roomState }) => {
+            updateBoard(roomState);
+            const me = roomState.players.find(p => p.color === myColor);
+            
+            let resultText = `Rojo jugó ${p1Move}, Azul jugó ${p2Move}. `;
+            if(roundWinner === 'NONE') resultText += "¡EMPATE! Las cartas se bloquean.";
+            else if(roundWinner === 'BOTH') resultText += "¡AMBOS AVANZAN!";
+            else resultText += `¡GANA JUGADOR ${roundWinner === 'P1' ? 'ROJO' : 'AZUL'}!`;
+            
+            document.getElementById('round-status').innerText = resultText;
+
+            if (gameWinner) {
+                alert(`¡JUEGO TERMINADO! ${gameWinner === 'TIE_GAME' ? 'EMPATE GLOBAL' : 'HAY UN GANADOR'}`);
+                goToLobby();
+            } else {
+                renderHand(me.available);
+            }
+        });
+
+        socket.on('opponent_surrendered', () => {
+            alert("Tu oponente ha abandonado la sala. Eres el ganador por defecto.");
+            goToLobby();
+        });
+
+        function surrender() {
+            if(confirm("¿Seguro que quieres abandonar la partida?")) {
+                socket.emit('surrender', currentRoom);
+                goToLobby();
+            }
+        }
+    </script>
+</body>
+</html>

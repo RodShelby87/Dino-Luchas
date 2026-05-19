@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dino Luchas - Web</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
@@ -77,13 +77,15 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 45%;
+            box-sizing: border-box;
         }
         .track-row {
             display: flex;
             align-items: center;
             margin-bottom: 5px;
+            justify-content: center;
         }
-        .track-label { width: 40px; font-weight: bold; font-size: 12px; }
+        .track-label { width: 40px; font-weight: bold; font-size: 12px; text-align: left; }
         .spaces { display: flex; gap: 5px; }
         .space {
             width: 30px;
@@ -125,14 +127,16 @@
             justify-content: center;
             transition: transform 0.2s;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
         .card:hover:not(.disabled) { transform: translateY(-10px); }
         .card.disabled { opacity: 0.5; cursor: not-allowed; }
         .card-title { font-size: 12px; font-weight: bold; margin-bottom: 5px; text-align: center; }
+        .card-svg-wrapper { display: flex; justify-content: center; align-items: center; }
         
         #round-status { font-size: 18px; font-weight: bold; color: #555; height: 30px; margin: 15px 0;}
 
-        /* ESTILOS DEL POP-UP (MODAL) */
+        /* MODAL STYLES */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -150,8 +154,11 @@
             text-align: center;
             max-width: 500px;
             width: 90%;
+            box-sizing: border-box;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             animation: slideIn 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
@@ -160,7 +167,6 @@
         .modal-content h2 { margin-top: 0; color: #333; }
         .modal-body { font-size: 16px; margin-bottom: 20px; }
         
-        /* Estilos para mostrar las cartas en el pop-up */
         .modal-cards-container {
             display: flex;
             justify-content: center;
@@ -211,6 +217,55 @@
         
         .rojo-text { color: var(--red); font-weight: bold; }
         .azul-text { color: var(--blue); font-weight: bold; }
+
+        /* --- MOBILE RESPONSIVE ADAPTATIONS --- */
+        @media (max-width: 768px) {
+            #lobby, #game-board {
+                margin-top: 70px; /* Space for top-left absolute nav */
+            }
+            .tracks-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .player-track-board {
+                width: 95%; /* Take up most of the screen width */
+                padding: 10px;
+            }
+            .space {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+            }
+            .hand {
+                flex-wrap: wrap; /* Allows cards to drop to a second row */
+                gap: 8px;
+            }
+            .card {
+                width: 75px;
+                height: 110px;
+            }
+            .card-svg-wrapper svg {
+                transform: scale(0.7); /* Shrink the icon inside the card */
+            }
+            .card-title {
+                font-size: 10px;
+            }
+            .modal-cards-container {
+                gap: 10px;
+                padding: 10px;
+            }
+            .vs-badge {
+                font-size: 18px;
+                padding: 8px;
+            }
+            .modal-content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -363,7 +418,7 @@
                 const btn = document.createElement('div');
                 btn.className = `card ${isDisabled ? 'disabled' : ''}`;
                 btn.style.color = hexColor;
-                btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> ${cardData[cardId].svg}`;
+                btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> <div class="card-svg-wrapper">${cardData[cardId].svg}</div>`;
                 if(!isDisabled) {
                     btn.onclick = () => playCard(cardId);
                 }
@@ -382,7 +437,7 @@
             return `
                 <div class="card" style="color: ${hexColor};">
                     <div class="card-title">${cardData[cardId].name}</div>
-                    ${cardData[cardId].svg}
+                    <div class="card-svg-wrapper">${cardData[cardId].svg}</div>
                 </div>
             `;
         }
@@ -393,7 +448,6 @@
             
             document.getElementById('round-status').innerText = 'Revisando resultados...';
             
-            // CONSTRUIR EL ÁREA DE CARTAS PARA EL POP-UP
             let cardsHTML = `
                 <div class="modal-cards-container">
                     <div class="modal-player-col">
@@ -413,7 +467,6 @@
             else if(roundWinner === 'BOTH') resultText = "<h3>¡AMBOS AVANZAN!</h3><p>Sus ataques impactaron al mismo tiempo.</p>";
             else resultText = `<h3>¡GANA JUGADOR <span class="${roundWinner === 'P1' ? 'rojo-text' : 'azul-text'}">${roundWinner === 'P1' ? 'ROJO' : 'AZUL'}</span>!</h3>`;
 
-            // SI ALGUIEN GANÓ LA PARTIDA COMPLETA
             if (gameWinner) {
                 let finalTitle = gameWinner === 'TIE_GAME' ? '¡EMPATE GLOBAL!' : '¡FIN DEL JUEGO!';
                 let finalWinner = gameWinner === 'P1_WINS' ? '<span class="rojo-text">ROJO</span>' : '<span class="azul-text">AZUL</span>';
@@ -430,9 +483,7 @@
                 showModal(finalTitle, finalBody, 'Volver al Lobby', () => {
                     goToLobby();
                 });
-            } 
-            // SI LA PARTIDA CONTINÚA (SOLO TERMINÓ LA RONDA)
-            else {
+            } else {
                 showModal('Resultado de la Ronda', cardsHTML + resultText, 'Siguiente Ronda', () => {
                     document.getElementById('round-status').innerText = '¡A LUCHAR! Elige una carta.';
                     renderHand(me.available);

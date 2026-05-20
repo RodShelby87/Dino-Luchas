@@ -149,7 +149,7 @@
         
         #round-status { font-size: 18px; font-weight: bold; color: #555; height: 30px; margin: 15px 0;}
 
-        /* ESTILOS DEL POP-UP (MODAL) */
+        /* MODAL STYLES */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -201,9 +201,22 @@
         .rojo-text { color: var(--red); font-weight: bold; }
         .azul-text { color: var(--blue); font-weight: bold; }
 
-        /* --- MODO STREET FIGHTER BACKGROUND (PURO CSS) --- */
+        /* WINNER IMAGE STYLE */
+        .winner-graphic {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+            animation: winnerPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes winnerPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* STREET FIGHTER THEME */
         body.mode-fighter {
-            /* Simula pared de ladrillos oscura y suelo de asfalto */
             background: 
                 linear-gradient(to bottom, transparent 65%, #2c3e50 65%, #1a252f 100%),
                 linear-gradient(335deg, rgba(255,255,255,0.05) 23px, transparent 23px),
@@ -213,7 +226,7 @@
             color: white;
         }
         body.mode-fighter h1, body.mode-fighter h2 {
-            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-shadow: 2px 2px 0 #000, 1px 1px 5px rgba(0,0,0,0.5);
             color: #f1c40f;
         }
         body.mode-fighter #game-board {
@@ -228,12 +241,10 @@
             border: 2px solid #555;
             color: white;
         }
-        body.mode-fighter .track-label { color: #ecf0f1; }
-        body.mode-fighter #round-status { color: #f1c40f; text-shadow: 1px 1px 2px black; }
         body.mode-fighter .card { background: #2c3e50; border-color: #f39c12; color: white;}
         body.mode-fighter .room-item { background: rgba(0,0,0,0.8); border: 1px solid #f39c12; color: white;}
 
-        /* --- MOBILE RESPONSIVE --- */
+        /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
             #lobby, #game-board { margin-top: 70px; }
             .tracks-container { flex-direction: column; align-items: center; gap: 15px; }
@@ -241,8 +252,6 @@
             .space { width: 26px; height: 26px; font-size: 12px; }
             .hand { flex-wrap: wrap; gap: 8px; }
             .card { width: 85px; height: 120px; }
-            .modal-cards-container { gap: 10px; padding: 10px; }
-            .vs-badge { font-size: 18px; padding: 8px; }
         }
     </style>
 </head>
@@ -263,10 +272,10 @@
     <div id="mode-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>Elige el Modo de Juego</h2>
-            <p>Selecciona cómo quieres que se vea la partida.</p>
+            <p>Selecciona la apariencia de la partida.</p>
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-                <button onclick="confirmCreateRoom('dummy')" style="background-color: #95a5a6; padding: 15px; font-size: 16px;">🤖 Modo Clásico</button>
-                <button onclick="confirmCreateRoom('fighter')" style="background-color: #f39c12; padding: 15px; font-size: 16px; color: black;">🥊 Street Fighter</button>
+                <button onclick="confirmCreateRoom('dummy')" style="background-color: #95a5a6; padding: 15px; font-size: 16px;">🤖 Clásico</button>
+                <button onclick="confirmCreateRoom('fighter')" style="background-color: #f39c12; padding: 15px; font-size: 16px; color: black;">🥊 Fighter</button>
             </div>
             <button onclick="document.getElementById('mode-modal').style.display='none'" style="margin-top: 20px; background: #e74c3c;">Cancelar</button>
         </div>
@@ -332,7 +341,7 @@
             if (currentRoom) socket.emit('surrender', currentRoom);
             document.getElementById('lobby').style.display = 'block';
             document.getElementById('game-board').style.display = 'none';
-            document.body.className = ''; // Quitar clase fighter
+            document.body.className = '';
             currentRoom = '';
         }
 
@@ -343,8 +352,7 @@
                 const li = document.createElement('li');
                 li.className = 'room-item';
                 const badgeClass = room.mode === 'fighter' ? 'bg-fighter' : 'bg-dummy';
-                const modeName = room.mode === 'fighter' ? 'Street Fighter' : 'Clásico';
-                
+                const modeName = room.mode === 'fighter' ? 'Fighter' : 'Clásico';
                 li.innerHTML = `
                     <div style="text-align: left;">
                         <span>Sala <strong>${room.id}</strong></span><br>
@@ -355,32 +363,22 @@
             });
         });
 
-        // NUEVO: Funciones para crear sala con selección de modo
-        function openModeSelector() {
-            document.getElementById('mode-modal').style.display = 'flex';
-        }
-
+        function openModeSelector() { document.getElementById('mode-modal').style.display = 'flex'; }
         function confirmCreateRoom(mode) {
             document.getElementById('mode-modal').style.display = 'none';
             socket.emit('create_room', mode);
         }
-
         function joinRoom(roomId) { socket.emit('join_room', roomId); }
 
         function applyModeTheme(mode) {
             currentRoomMode = mode;
-            if (mode === 'fighter') {
-                document.body.className = 'mode-fighter';
-            } else {
-                document.body.className = '';
-            }
+            document.body.className = mode === 'fighter' ? 'mode-fighter' : '';
         }
 
         socket.on('room_created', (roomState) => {
             currentRoom = roomState.id;
             myColor = 'Rojo';
             applyModeTheme(roomState.mode);
-            
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('game-board').style.display = 'block';
             document.getElementById('room-display').innerText = `Sala: ${currentRoom} (Esperando oponente...)`;
@@ -390,7 +388,6 @@
         socket.on('game_start', (roomState) => {
             currentRoom = roomState.id;
             applyModeTheme(roomState.mode);
-            
             if(!myColor) myColor = 'Azul';
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('game-board').style.display = 'block';
@@ -430,11 +427,10 @@
             });
         }
 
-        // Función que decide si mostrar SVG o las imágenes .png
         function getCardImage(cardId, color) {
             if (currentRoomMode === 'fighter') {
                 const prefix = color === 'Rojo' ? 'Red' : 'Blue';
-                return `<img src="/assets/fighter/${prefix}_${cardId}.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="${cardId}">`;
+                return `<img src="/assets/fighter/${prefix}_${cardId}.png" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
             } else {
                 return cardData[cardId].svg;
             }
@@ -444,17 +440,13 @@
             const handDiv = document.getElementById('player-hand');
             handDiv.innerHTML = '';
             const hexColor = myColor === 'Rojo' ? '#e74c3c' : '#3498db';
-
             ['AA', 'AB', 'DA', 'DB'].forEach(cardId => {
                 const isDisabled = !availableCards.includes(cardId);
                 const btn = document.createElement('div');
                 btn.className = `card ${isDisabled ? 'disabled' : ''}`;
                 if(currentRoomMode === 'dummy') btn.style.color = hexColor;
-                
                 btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> <div class="card-content-wrapper">${getCardImage(cardId, myColor)}</div>`;
-                if(!isDisabled) {
-                    btn.onclick = () => playCard(cardId);
-                }
+                if(!isDisabled) btn.onclick = () => playCard(cardId);
                 handDiv.appendChild(btn);
             });
         }
@@ -468,51 +460,41 @@
         function getCardHTML(cardId, color) {
             const hexColor = color === 'Rojo' ? '#e74c3c' : '#3498db';
             const colorStyle = currentRoomMode === 'dummy' ? `color: ${hexColor};` : '';
-            return `
-                <div class="card" style="${colorStyle}">
-                    <div class="card-title">${cardData[cardId].name}</div>
-                    <div class="card-content-wrapper">${getCardImage(cardId, color)}</div>
-                </div>
-            `;
+            return `<div class="card" style="${colorStyle}"><div class="card-title">${cardData[cardId].name}</div><div class="card-content-wrapper">${getCardImage(cardId, color)}</div></div>`;
         }
 
         socket.on('round_result', ({ p1Move, p2Move, roundWinner, gameWinner, roomState }) => {
             updateBoard(roomState);
             const me = roomState.players.find(p => p.color === myColor);
             
-            document.getElementById('round-status').innerText = 'Revisando resultados...';
-            
             let cardsHTML = `
                 <div class="modal-cards-container">
-                    <div class="modal-player-col">
-                        <span class="rojo-text">Rojo</span>
-                        ${getCardHTML(p1Move, 'Rojo')}
-                    </div>
+                    <div class="modal-player-col"><span class="rojo-text">Rojo</span>${getCardHTML(p1Move, 'Rojo')}</div>
                     <div class="vs-badge">VS</div>
-                    <div class="modal-player-col">
-                        <span class="azul-text">Azul</span>
-                        ${getCardHTML(p2Move, 'Azul')}
-                    </div>
-                </div>
-            `;
+                    <div class="modal-player-col"><span class="azul-text">Azul</span>${getCardHTML(p2Move, 'Azul')}</div>
+                </div>`;
             
             let resultText = "";
-            if(roundWinner === 'NONE') resultText = "<h3>¡EMPATE!</h3><p>Las cartas se bloquean y quedan en la mesa.</p>";
-            else if(roundWinner === 'BOTH') resultText = "<h3>¡AMBOS AVANZAN!</h3><p>Sus ataques impactaron al mismo tiempo.</p>";
+            if(roundWinner === 'NONE') resultText = "<h3>¡EMPATE!</h3><p>Las cartas se bloquean en la mesa.</p>";
+            else if(roundWinner === 'BOTH') resultText = "<h3>¡AMBOS AVANZAN!</h3><p>Los ataques fueron simultáneos.</p>";
             else resultText = `<h3>¡GANA JUGADOR <span class="${roundWinner === 'P1' ? 'rojo-text' : 'azul-text'}">${roundWinner === 'P1' ? 'ROJO' : 'AZUL'}</span>!</h3>`;
 
             if (gameWinner) {
                 let finalTitle = gameWinner === 'TIE_GAME' ? '¡EMPATE GLOBAL!' : '¡FIN DEL JUEGO!';
                 let finalWinner = gameWinner === 'P1_WINS' ? '<span class="rojo-text">ROJO</span>' : '<span class="azul-text">AZUL</span>';
-                let icon = gameWinner === 'TIE_GAME' ? '🤝' : '🏆';
-                
-                let finalBody = cardsHTML + resultText + `<hr><div style="font-size: 50px; margin: 10px;">${icon}</div>`;
-                
-                if(gameWinner !== 'TIE_GAME') {
-                    finalBody += `<h2>¡EL JUGADOR ${finalWinner} ES EL GANADOR!</h2>`;
+                let winnerGraphic = "";
+
+                // LÓGICA PARA CARGAR RED_WIN O BLUE_WIN EN MODO FIGHTER
+                if (currentRoomMode === 'fighter' && gameWinner !== 'TIE_GAME') {
+                    const winImg = gameWinner === 'P1_WINS' ? 'Red_Win.png' : 'Blue_Win.png';
+                    winnerGraphic = `<img src="/assets/fighter/${winImg}" class="winner-graphic" alt="Winner Graphic">`;
                 } else {
-                    finalBody += `<h2>¡ES UN EMPATE TÉCNICO!</h2>`;
+                    let icon = gameWinner === 'TIE_GAME' ? '🤝' : '🏆';
+                    winnerGraphic = `<div style="font-size: 80px; margin: 10px;">${icon}</div>`;
                 }
+                
+                let finalBody = cardsHTML + resultText + `<hr>` + winnerGraphic;
+                if(gameWinner !== 'TIE_GAME') finalBody += `<h2>¡EL JUGADOR ${finalWinner} GANA LA PARTIDA!</h2>`;
                 
                 showModal(finalTitle, finalBody, 'Volver al Lobby', () => goToLobby());
             } else {
@@ -524,9 +506,7 @@
         });
 
         socket.on('opponent_surrendered', () => {
-            showModal('Victoria por Abandono', '<div style="font-size: 50px; margin: 10px;">🏆</div><p>Tu oponente se ha desconectado o ha abandonado la sala.</p><h3>¡Has ganado por defecto!</h3>', 'Volver al Lobby', () => {
-                goToLobby();
-            });
+            showModal('Victoria por Abandono', '<div style="font-size: 50px; margin: 10px;">🏆</div><p>Tu oponente se ha desconectado.</p><h3>¡Has ganado por defecto!</h3>', 'Volver al Lobby', () => goToLobby());
         });
 
         function surrender() {

@@ -491,18 +491,21 @@
             
             let resultText = "";
             if(roundWinner === 'NONE') {
+                // Same card tie or full block (e.g., DA vs DA, AA vs AA)
                 resultText = `
                     <div class="round-result-text">
                         <h3>¡EMPATE!</h3>
                         <p>Las cartas se anulan. ¡Jueguen otra mano!</p>
                     </div>`;
             } else if(roundWinner === 'BOTH') {
+                // Different attacks tie (e.g., AA vs AB)
                 resultText = `
                     <div class="round-result-text">
-                        <h3>¡AMBOS AVANZAN!</h3>
-                        <p>Los ataques fueron simultáneos. ¡Jueguen otra mano!</p>
+                        <h3>¡ATAQUE CRUZADO!</h3>
+                        <p>Ambos ataques impactan. ¡Los dos jugadores reciben un punto y avanzan!</p>
                     </div>`;
             } else {
+                // Clear winner for the round
                 resultText = `
                     <div class="round-result-text">
                         <h3>¡GANA JUGADOR <span class="${roundWinner === 'P1' ? 'rojo-text' : 'azul-text'}">${roundWinner === 'P1' ? 'ROJO' : 'AZUL'}</span>!</h3>
@@ -514,7 +517,6 @@
                 let finalWinner = gameWinner === 'P1_WINS' ? '<span class="rojo-text">ROJO</span>' : '<span class="azul-text">AZUL</span>';
                 let winnerGraphic = "";
 
-                // LÓGICA PARA CARGAR IMÁGENES DE FIN DE JUEGO (VICTORIA O EMPATE MODO FIGHTER)
                 if (currentRoomMode === 'fighter') {
                     if (gameWinner === 'TIE_GAME') {
                         winnerGraphic = `<img src="/assets/fighter/Draw_Game.png" class="winner-graphic" alt="Empate">`;

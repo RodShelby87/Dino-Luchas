@@ -9,7 +9,7 @@ app.use(express.static('public'));
 
 const server = http.createServer(app);
 
-// CONFIGURACIÓN ANTI-DESCONEXIÓN: Latidos cada 15 segundos para mantener vivo a Render
+// Latidos cada 15 segundos para mantener vivo a Render
 const io = new Server(server, { 
     cors: { origin: "*" },
     pingInterval: 15000,
@@ -33,19 +33,27 @@ function checkWinner(move1, move2) {
     return 'NONE';
 }
 
-io.on('connection', (socket) => {
-    socket.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
+const getOpenRooms = () => {
+    return Object.keys(rooms)
+        .filter(r => rooms[r].players.length === 1)
+        .map(id => ({ id, mode: rooms[id].mode }));
+};
 
-    socket.on('create_room', () => {
+io.on('connection', (socket) => {
+    socket.emit('update_lobby', getOpenRooms());
+
+    // AHORA RECIBE EL MODO (dummy o fighter)
+    socket.on('create_room', (mode) => {
         const roomId = Math.floor(1000 + Math.random() * 9000).toString();
         rooms[roomId] = {
             id: roomId,
+            mode: mode || 'dummy',
             players: [{ id: socket.id, color: 'Rojo', tracks: { AA: 0, AB: 0, DA: 0, DB: 0 }, available: ['AA', 'AB', 'DA', 'DB'] }],
             moves: {}
         };
         socket.join(roomId);
-        socket.emit('room_created', roomId);
-        io.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
+        socket.emit('room_created', rooms[roomId]);
+        io.emit('update_lobby', getOpenRooms());
     });
 
     socket.on('join_room', (roomId) => {
@@ -53,13 +61,12 @@ io.on('connection', (socket) => {
             rooms[roomId].players.push({ id: socket.id, color: 'Azul', tracks: { AA: 0, AB: 0, DA: 0, DB: 0 }, available: ['AA', 'AB', 'DA', 'DB'] });
             socket.join(roomId);
             io.to(roomId).emit('game_start', rooms[roomId]);
-            io.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
+            io.emit('update_lobby', getOpenRooms());
         } else {
             socket.emit('error_msg', 'La sala no existe o está llena.');
         }
     });
 
-    // AHORA RECIBIMOS EL COLOR PARA EVITAR BUGS DE DESCONEXIÓN
     socket.on('play_card', ({ roomId, color, card }) => {
         const room = rooms[roomId];
         if (!room) return;
@@ -111,7 +118,7 @@ io.on('connection', (socket) => {
         if (rooms[roomId]) {
             socket.to(roomId).emit('opponent_surrendered');
             delete rooms[roomId];
-            io.emit('update_lobby', Object.keys(rooms).filter(r => rooms[r].players.length === 1));
+            io.emit('update_lobby', getOpenRooms());
         }
     });
 });

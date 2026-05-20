@@ -19,6 +19,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: background 0.5s ease;
+            min-height: 100vh;
         }
         .golden-nav {
             position: absolute;
@@ -50,21 +52,29 @@
         }
         #game-board { display: none; }
         
-        .room-list {
-            list-style: none;
-            padding: 0;
-        }
+        .room-list { list-style: none; padding: 0; }
         .room-item {
             background: white;
             margin: 5px auto;
             padding: 10px;
-            width: 250px;
+            width: 300px;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+        .mode-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        .bg-dummy { background-color: #95a5a6; }
+        .bg-fighter { background-color: #f39c12; }
         
         .tracks-container {
             display: flex;
@@ -78,6 +88,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 45%;
             box-sizing: border-box;
+            transition: all 0.3s ease;
         }
         .track-row {
             display: flex;
@@ -128,15 +139,17 @@
             transition: transform 0.2s;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
+            overflow: hidden;
+            padding: 5px;
         }
         .card:hover:not(.disabled) { transform: translateY(-10px); }
         .card.disabled { opacity: 0.5; cursor: not-allowed; }
         .card-title { font-size: 12px; font-weight: bold; margin-bottom: 5px; text-align: center; }
-        .card-svg-wrapper { display: flex; justify-content: center; align-items: center; }
+        .card-content-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: 80%; }
         
         #round-status { font-size: 18px; font-weight: bold; color: #555; height: 30px; margin: 15px 0;}
 
-        /* MODAL STYLES */
+        /* ESTILOS DEL POP-UP (MODAL) */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -164,8 +177,12 @@
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        .modal-content h2 { margin-top: 0; color: #333; }
-        .modal-body { font-size: 16px; margin-bottom: 20px; }
+        .modal-btn {
+            font-size: 16px;
+            padding: 12px 24px;
+            background-color: #2ecc71;
+        }
+        .modal-btn:hover { background-color: #27ae60; }
         
         .modal-cards-container {
             display: flex;
@@ -177,94 +194,55 @@
             background: #f8f9fa;
             border-radius: 8px;
         }
-        .modal-player-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .modal-cards-container .card {
-            cursor: default;
-            transform: none !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .vs-badge {
-            font-size: 24px;
-            font-weight: bold;
-            color: #7f8c8d;
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 50%;
-        }
-
-        .winner-icon {
-            font-size: 60px;
-            margin: 10px 0;
-            animation: popIcon 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIcon {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
-        }
-
-        .modal-btn {
-            font-size: 16px;
-            padding: 12px 24px;
-            background-color: #2ecc71;
-            box-shadow: 0 4px 6px rgba(46, 204, 113, 0.3);
-        }
-        .modal-btn:hover { background-color: #27ae60; }
+        .modal-player-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .modal-cards-container .card { cursor: default; transform: none !important; }
+        .vs-badge { font-size: 24px; font-weight: bold; color: #7f8c8d; }
         
         .rojo-text { color: var(--red); font-weight: bold; }
         .azul-text { color: var(--blue); font-weight: bold; }
 
-        /* --- MOBILE RESPONSIVE ADAPTATIONS --- */
+        /* --- MODO STREET FIGHTER BACKGROUND (PURO CSS) --- */
+        body.mode-fighter {
+            /* Simula pared de ladrillos oscura y suelo de asfalto */
+            background: 
+                linear-gradient(to bottom, transparent 65%, #2c3e50 65%, #1a252f 100%),
+                linear-gradient(335deg, rgba(255,255,255,0.05) 23px, transparent 23px),
+                linear-gradient(155deg, rgba(255,255,255,0.05) 23px, transparent 23px);
+            background-color: #795548;
+            background-size: 100% 100%, 58px 58px, 58px 58px;
+            color: white;
+        }
+        body.mode-fighter h1, body.mode-fighter h2 {
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            color: #f1c40f;
+        }
+        body.mode-fighter #game-board {
+            background: rgba(0, 0, 0, 0.75);
+            border: 3px solid #f39c12;
+            box-shadow: 0 0 20px #f39c12;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        body.mode-fighter .player-track-board {
+            background: #34495e;
+            border: 2px solid #555;
+            color: white;
+        }
+        body.mode-fighter .track-label { color: #ecf0f1; }
+        body.mode-fighter #round-status { color: #f1c40f; text-shadow: 1px 1px 2px black; }
+        body.mode-fighter .card { background: #2c3e50; border-color: #f39c12; color: white;}
+        body.mode-fighter .room-item { background: rgba(0,0,0,0.8); border: 1px solid #f39c12; color: white;}
+
+        /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 768px) {
-            #lobby, #game-board {
-                margin-top: 70px; /* Space for top-left absolute nav */
-            }
-            .tracks-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-            }
-            .player-track-board {
-                width: 95%; /* Take up most of the screen width */
-                padding: 10px;
-            }
-            .space {
-                width: 26px;
-                height: 26px;
-                font-size: 12px;
-            }
-            .hand {
-                flex-wrap: wrap; /* Allows cards to drop to a second row */
-                gap: 8px;
-            }
-            .card {
-                width: 75px;
-                height: 110px;
-            }
-            .card-svg-wrapper svg {
-                transform: scale(0.7); /* Shrink the icon inside the card */
-            }
-            .card-title {
-                font-size: 10px;
-            }
-            .modal-cards-container {
-                gap: 10px;
-                padding: 10px;
-            }
-            .vs-badge {
-                font-size: 18px;
-                padding: 8px;
-            }
-            .modal-content {
-                padding: 20px;
-            }
-            h1 {
-                font-size: 24px;
-            }
+            #lobby, #game-board { margin-top: 70px; }
+            .tracks-container { flex-direction: column; align-items: center; gap: 15px; }
+            .player-track-board { width: 95%; padding: 10px; }
+            .space { width: 26px; height: 26px; font-size: 12px; }
+            .hand { flex-wrap: wrap; gap: 8px; }
+            .card { width: 85px; height: 120px; }
+            .modal-cards-container { gap: 10px; padding: 10px; }
+            .vs-badge { font-size: 18px; padding: 8px; }
         }
     </style>
 </head>
@@ -282,9 +260,21 @@
         </div>
     </div>
 
+    <div id="mode-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Elige el Modo de Juego</h2>
+            <p>Selecciona cómo quieres que se vea la partida.</p>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button onclick="confirmCreateRoom('dummy')" style="background-color: #95a5a6; padding: 15px; font-size: 16px;">🤖 Modo Clásico</button>
+                <button onclick="confirmCreateRoom('fighter')" style="background-color: #f39c12; padding: 15px; font-size: 16px; color: black;">🥊 Street Fighter</button>
+            </div>
+            <button onclick="document.getElementById('mode-modal').style.display='none'" style="margin-top: 20px; background: #e74c3c;">Cancelar</button>
+        </div>
+    </div>
+
     <div id="lobby">
         <h1>Dino Luchas</h1>
-        <button onclick="createRoom()" style="font-size: 18px; padding: 10px 20px;">Crear Nueva Sala</button>
+        <button onclick="openModeSelector()" style="font-size: 18px; padding: 10px 20px; background-color: #2ecc71;">Crear Nueva Sala</button>
         
         <h2>Salas Abiertas</h2>
         <ul id="room-list" class="room-list"></ul>
@@ -315,13 +305,14 @@
 
         let myColor = '';
         let currentRoom = '';
+        let currentRoomMode = 'dummy';
         let modalCallback = null;
 
         const cardData = {
-            'AA': { name: 'Ataque Alto', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="80" y2="20" stroke="currentColor" stroke-width="6"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
-            'AB': { name: 'Ataque Bajo', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="90" y2="70" stroke="currentColor" stroke-width="6"/></svg>' },
-            'DA': { name: 'Defensa Alta', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="30" stroke="currentColor" stroke-width="6"/><line x1="70" y1="30" x2="50" y2="10" stroke="currentColor" stroke-width="6"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
-            'DB': { name: 'Defensa Baja', svg: '<svg viewBox="0 0 100 100" width="50" height="50"><circle cx="50" cy="50" r="12" fill="currentColor"/><line x1="50" y1="62" x2="50" y2="80" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="70" y2="90" stroke="currentColor" stroke-width="6"/><line x1="50" y1="80" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="80" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' }
+            'AA': { name: 'Ataque Alto', svg: '<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="80" y2="20" stroke="currentColor" stroke-width="6"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
+            'AB': { name: 'Ataque Bajo', svg: '<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="30" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="60" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="90" y2="70" stroke="currentColor" stroke-width="6"/></svg>' },
+            'DA': { name: 'Defensa Alta', svg: '<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="30" r="12" fill="currentColor"/><line x1="50" y1="42" x2="50" y2="70" stroke="currentColor" stroke-width="4"/><line x1="50" y1="50" x2="70" y2="30" stroke="currentColor" stroke-width="6"/><line x1="70" y1="30" x2="50" y2="10" stroke="currentColor" stroke-width="6"/><line x1="50" y1="70" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' },
+            'DB': { name: 'Defensa Baja', svg: '<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="50" r="12" fill="currentColor"/><line x1="50" y1="62" x2="50" y2="80" stroke="currentColor" stroke-width="4"/><line x1="50" y1="70" x2="70" y2="90" stroke="currentColor" stroke-width="6"/><line x1="50" y1="80" x2="35" y2="95" stroke="currentColor" stroke-width="4"/><line x1="50" y1="80" x2="65" y2="95" stroke="currentColor" stroke-width="4"/></svg>' }
         };
 
         function showModal(title, bodyHTML, btnText, callback) {
@@ -341,34 +332,65 @@
             if (currentRoom) socket.emit('surrender', currentRoom);
             document.getElementById('lobby').style.display = 'block';
             document.getElementById('game-board').style.display = 'none';
+            document.body.className = ''; // Quitar clase fighter
             currentRoom = '';
         }
 
         socket.on('update_lobby', (openRooms) => {
             const list = document.getElementById('room-list');
             list.innerHTML = '';
-            openRooms.forEach(roomId => {
+            openRooms.forEach(room => {
                 const li = document.createElement('li');
                 li.className = 'room-item';
-                li.innerHTML = `<span>Sala <strong>${roomId}</strong></span> <button onclick="joinRoom('${roomId}')">Unirse</button>`;
+                const badgeClass = room.mode === 'fighter' ? 'bg-fighter' : 'bg-dummy';
+                const modeName = room.mode === 'fighter' ? 'Street Fighter' : 'Clásico';
+                
+                li.innerHTML = `
+                    <div style="text-align: left;">
+                        <span>Sala <strong>${room.id}</strong></span><br>
+                        <span class="mode-badge ${badgeClass}">${modeName}</span>
+                    </div>
+                    <button onclick="joinRoom('${room.id}')">Unirse</button>`;
                 list.appendChild(li);
             });
         });
 
-        function createRoom() { socket.emit('create_room'); }
+        // NUEVO: Funciones para crear sala con selección de modo
+        function openModeSelector() {
+            document.getElementById('mode-modal').style.display = 'flex';
+        }
+
+        function confirmCreateRoom(mode) {
+            document.getElementById('mode-modal').style.display = 'none';
+            socket.emit('create_room', mode);
+        }
+
         function joinRoom(roomId) { socket.emit('join_room', roomId); }
 
-        socket.on('room_created', (roomId) => {
-            currentRoom = roomId;
+        function applyModeTheme(mode) {
+            currentRoomMode = mode;
+            if (mode === 'fighter') {
+                document.body.className = 'mode-fighter';
+            } else {
+                document.body.className = '';
+            }
+        }
+
+        socket.on('room_created', (roomState) => {
+            currentRoom = roomState.id;
             myColor = 'Rojo';
+            applyModeTheme(roomState.mode);
+            
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('game-board').style.display = 'block';
-            document.getElementById('room-display').innerText = `Sala: ${roomId} (Esperando oponente...)`;
+            document.getElementById('room-display').innerText = `Sala: ${currentRoom} (Esperando oponente...)`;
             renderTracks();
         });
 
         socket.on('game_start', (roomState) => {
             currentRoom = roomState.id;
+            applyModeTheme(roomState.mode);
+            
             if(!myColor) myColor = 'Azul';
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('game-board').style.display = 'block';
@@ -408,6 +430,16 @@
             });
         }
 
+        // Función que decide si mostrar SVG o las imágenes .png
+        function getCardImage(cardId, color) {
+            if (currentRoomMode === 'fighter') {
+                const prefix = color === 'Rojo' ? 'Red' : 'Blue';
+                return `<img src="/assets/fighter/${prefix}_${cardId}.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="${cardId}">`;
+            } else {
+                return cardData[cardId].svg;
+            }
+        }
+
         function renderHand(availableCards) {
             const handDiv = document.getElementById('player-hand');
             handDiv.innerHTML = '';
@@ -417,8 +449,9 @@
                 const isDisabled = !availableCards.includes(cardId);
                 const btn = document.createElement('div');
                 btn.className = `card ${isDisabled ? 'disabled' : ''}`;
-                btn.style.color = hexColor;
-                btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> <div class="card-svg-wrapper">${cardData[cardId].svg}</div>`;
+                if(currentRoomMode === 'dummy') btn.style.color = hexColor;
+                
+                btn.innerHTML = `<div class="card-title">${cardData[cardId].name}</div> <div class="card-content-wrapper">${getCardImage(cardId, myColor)}</div>`;
                 if(!isDisabled) {
                     btn.onclick = () => playCard(cardId);
                 }
@@ -434,10 +467,11 @@
 
         function getCardHTML(cardId, color) {
             const hexColor = color === 'Rojo' ? '#e74c3c' : '#3498db';
+            const colorStyle = currentRoomMode === 'dummy' ? `color: ${hexColor};` : '';
             return `
-                <div class="card" style="color: ${hexColor};">
+                <div class="card" style="${colorStyle}">
                     <div class="card-title">${cardData[cardId].name}</div>
-                    <div class="card-svg-wrapper">${cardData[cardId].svg}</div>
+                    <div class="card-content-wrapper">${getCardImage(cardId, color)}</div>
                 </div>
             `;
         }
@@ -472,17 +506,15 @@
                 let finalWinner = gameWinner === 'P1_WINS' ? '<span class="rojo-text">ROJO</span>' : '<span class="azul-text">AZUL</span>';
                 let icon = gameWinner === 'TIE_GAME' ? '🤝' : '🏆';
                 
-                let finalBody = cardsHTML + resultText + `<hr><div class="winner-icon">${icon}</div>`;
+                let finalBody = cardsHTML + resultText + `<hr><div style="font-size: 50px; margin: 10px;">${icon}</div>`;
                 
                 if(gameWinner !== 'TIE_GAME') {
-                    finalBody += `<h2>¡EL JUGADOR ${finalWinner} ES EL GANADOR!</h2><p>Ha dominado la arena y alcanzado la corona.</p>`;
+                    finalBody += `<h2>¡EL JUGADOR ${finalWinner} ES EL GANADOR!</h2>`;
                 } else {
-                    finalBody += `<h2>¡ES UN EMPATE TÉCNICO!</h2><p>Ambos jugadores alcanzaron la corona simultáneamente.</p>`;
+                    finalBody += `<h2>¡ES UN EMPATE TÉCNICO!</h2>`;
                 }
                 
-                showModal(finalTitle, finalBody, 'Volver al Lobby', () => {
-                    goToLobby();
-                });
+                showModal(finalTitle, finalBody, 'Volver al Lobby', () => goToLobby());
             } else {
                 showModal('Resultado de la Ronda', cardsHTML + resultText, 'Siguiente Ronda', () => {
                     document.getElementById('round-status').innerText = '¡A LUCHAR! Elige una carta.';
@@ -492,7 +524,7 @@
         });
 
         socket.on('opponent_surrendered', () => {
-            showModal('Victoria por Abandono', '<div class="winner-icon">🏆</div><p>Tu oponente se ha desconectado o ha abandonado la sala.</p><h3>¡Has ganado por defecto!</h3>', 'Volver al Lobby', () => {
+            showModal('Victoria por Abandono', '<div style="font-size: 50px; margin: 10px;">🏆</div><p>Tu oponente se ha desconectado o ha abandonado la sala.</p><h3>¡Has ganado por defecto!</h3>', 'Volver al Lobby', () => {
                 goToLobby();
             });
         });

@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dino Luchas - Web</title>
+    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥊</text></svg>">
+    
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
@@ -127,7 +129,6 @@
             min-height: 160px;
         }
         
-        /* CARTAS MÁS GRANDES Y OPTIMIZADAS */
         .card {
             width: 120px;
             height: 160px;
@@ -167,7 +168,6 @@
             background: white;
             padding: 30px;
             border-radius: 12px;
-            text-align: center;
             max-width: 550px;
             width: 90%;
             box-sizing: border-box;
@@ -175,11 +175,25 @@
             animation: slideIn 0.3s ease-out;
             max-height: 90vh;
             overflow-y: auto;
+            /* Flexbox para forzar centrado de todos los hijos */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #333;
         }
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+        
+        .modal-body {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .modal-btn {
             font-size: 16px;
             padding: 12px 24px;
@@ -203,11 +217,13 @@
         .modal-cards-container .card { cursor: default; transform: none !important; }
         .vs-badge { font-size: 24px; font-weight: bold; color: #7f8c8d; }
         
-        /* FORZAR CENTRADO DEL TEXTO DE RESULTADO */
         .round-result-text {
             text-align: center;
             width: 100%;
             margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .round-result-text h3 { margin: 5px 0; }
         .round-result-text p { margin: 5px 0; color: #555; }
@@ -215,7 +231,6 @@
         .rojo-text { color: var(--red); font-weight: bold; }
         .azul-text { color: var(--blue); font-weight: bold; }
 
-        /* WINNER / DRAW IMAGE STYLE */
         .winner-graphic {
             max-width: 100%;
             height: auto;
@@ -230,6 +245,7 @@
             0% { transform: scale(0.5); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
+        hr { width: 80%; border: 1px solid #ccc; margin: 15px 0; }
 
         /* STREET FIGHTER THEME */
         body.mode-fighter {
@@ -255,16 +271,30 @@
         body.mode-fighter .player-track-board { background: #34495e; border: 2px solid #555; color: white; }
         body.mode-fighter .card { background: #2c3e50; border-color: #f39c12; color: white;}
         body.mode-fighter .room-item { background: rgba(0,0,0,0.8); border: 1px solid #f39c12; color: white;}
-        body.mode-fighter .round-result-text p { color: #ccc; }
+        
+        /* FIX MODAL CONTRAST FOR FIGHTER MODE */
+        body.mode-fighter .modal-content {
+            background: #1a252f;
+            border: 3px solid #f39c12;
+            color: white;
+        }
+        body.mode-fighter .modal-content h2, body.mode-fighter .modal-content h3 {
+            color: #f1c40f;
+            text-shadow: none;
+        }
+        body.mode-fighter .modal-cards-container { background: #2c3e50; border: 1px solid #f39c12; }
+        body.mode-fighter .vs-badge { color: #f39c12; }
+        body.mode-fighter .round-result-text p { color: #ecf0f1; }
+        body.mode-fighter hr { border-color: #555; }
 
-        /* MOBILE RESPONSIVE ADAPTADO A CARTAS MÁS GRANDES */
+        /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
             #lobby, #game-board { margin-top: 70px; }
             .tracks-container { flex-direction: column; align-items: center; gap: 15px; }
             .player-track-board { width: 95%; padding: 10px; }
             .space { width: 26px; height: 26px; font-size: 12px; }
             .hand { flex-wrap: wrap; gap: 10px; min-height: 140px; }
-            .card { width: 100px; height: 140px; } /* Cartas más grandes también en móviles */
+            .card { width: 100px; height: 140px; } 
             .modal-cards-container { gap: 10px; padding: 10px; width: 100%; box-sizing: border-box; }
             .vs-badge { font-size: 18px; }
         }
@@ -490,22 +520,28 @@
                 </div>`;
             
             let resultText = "";
-            if(roundWinner === 'NONE') {
-                // Same card tie or full block (e.g., DA vs DA, AA vs AA)
-                resultText = `
-                    <div class="round-result-text">
-                        <h3>¡EMPATE!</h3>
-                        <p>Las cartas se anulan. ¡Jueguen otra mano!</p>
-                    </div>`;
-            } else if(roundWinner === 'BOTH') {
-                // Different attacks tie (e.g., AA vs AB)
+            if (roundWinner === 'NONE') {
+                if (p1Move === p2Move) {
+                    resultText = `
+                        <div class="round-result-text">
+                            <h3>¡EMPATE!</h3>
+                            <p>Las cartas se anulan. ¡Jueguen otra mano!</p>
+                        </div>`;
+                } else {
+                    // Diferentes cartas de defensa (DA vs DB)
+                    resultText = `
+                        <div class="round-result-text">
+                            <h3>¡EMPATE DEFENSIVO!</h3>
+                            <p>Defensas bloqueadas. Ningún punto otorgado.</p>
+                        </div>`;
+                }
+            } else if (roundWinner === 'BOTH') {
                 resultText = `
                     <div class="round-result-text">
                         <h3>¡ATAQUE CRUZADO!</h3>
-                        <p>Ambos ataques impactan. ¡Los dos jugadores reciben un punto y avanzan!</p>
+                        <p>Ambos ataques impactan. ¡Los dos ganan un punto!</p>
                     </div>`;
             } else {
-                // Clear winner for the round
                 resultText = `
                     <div class="round-result-text">
                         <h3>¡GANA JUGADOR <span class="${roundWinner === 'P1' ? 'rojo-text' : 'azul-text'}">${roundWinner === 'P1' ? 'ROJO' : 'AZUL'}</span>!</h3>
